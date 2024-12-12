@@ -1,6 +1,6 @@
 import re
-import yaml
 import sys
+import yaml
 
 
 class ConfigLanguageError(Exception):
@@ -17,10 +17,35 @@ class Translator:
         input_text = self.remove_comments(input_text)
         lines = input_text.splitlines()
         result = {}
+        buffer = []  # Буфер для многострочного выражения
+        in_multiline = False  # Флаг, обозначающий состояние многострочного выражения
+
         for line in lines:
             line = line.strip()
             if not line:
                 continue  # Пропустить пустые строки
+
+            if in_multiline:
+                # Продолжение многострочного выражения
+                buffer.append(line)
+                if line.endswith('}') or line.endswith(']'):
+                    in_multiline = False
+                    combined = " ".join(buffer)
+                    parsed = self.parse_expression(combined)
+                    buffer = []  # Очистить буфер
+                    if isinstance(parsed, dict):
+                        result.update(parsed)
+                    elif isinstance(parsed, list):
+                        # Если это массив, выдаём ошибку, так как массив на верхнем уровне недопустим
+                        raise ConfigLanguageError(f"Некорректное выражение: {combined}")
+                continue
+
+            if line.startswith("{") or line.startswith("["):
+                # Начало многострочного выражения
+                buffer.append(line)
+                in_multiline = True
+                continue
+
             if line.startswith("def"):
                 self.parse_constant(line)
             elif line.startswith("^"):
@@ -49,7 +74,7 @@ class Translator:
         self.constants[name] = value
 
     def evaluate_constant(self, line):
-        """Вычисление констант."""
+        """Вычисление значения константы."""
         match = re.match(r'\^([_A-Za-z][_a-zA-Z0-9]*)', line)
         if not match:
             raise ConfigLanguageError(f"Ошибка в вычислении константы: {line}")
@@ -63,6 +88,8 @@ class Translator:
         text = text.strip()
         if re.match(r'^\d+$', text):  # Число
             return int(text)
+        elif text.startswith('"') and text.endswith('"'):  # Строка
+            return text[1:-1]
         elif text.startswith('[') and text.endswith(']'):  # Массив
             return self.parse_array(text)
         elif text.startswith('{') and text.endswith('}'):  # Словарь
@@ -72,17 +99,25 @@ class Translator:
 
     def parse_array(self, text):
         """Парсинг массивов."""
-        elements = text[1:-1].split(',')
+        text = text[1:-1].strip()  # Убираем квадратные скобки
+        if not text:  # Если массив пустой
+            return []
+        # Используем регэксп для корректного разбиения, учитывая вложенные структуры
+        elements = re.split(r',(?=(?:[^"]*"[^"]*")*[^"]*$)', text)
         return [self.parse_expression(el.strip()) for el in elements]
 
     def parse_dict(self, text):
         """Парсинг словарей."""
-        items = text[1:-1].split(',')
+        text = text[1:-1].strip()  # Убираем фигурные скобки
+        if not text:  # Если словарь пустой
+            return {}
+        # Разбиваем строки с учётом возможных вложенных конструкций
+        items = re.split(r',(?=(?:[^"]*"[^"]*")*[^"]*$)', text)
         result = {}
         for item in items:
-            key_value = item.split('=')
+            key_value = item.split('=', 1)
             if len(key_value) != 2:
-                raise ConfigLanguageError(f"Некорректный элемент словаря: {item}")
+                raise ConfigLanguageError(f"Некорректный элемент словаря: {item.strip()}")
             key = key_value[0].strip()
             value = self.parse_expression(key_value[1].strip())
             result[key] = value

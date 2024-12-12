@@ -1,0 +1,9 @@
+% Это пример конфигурации
+def MAX_COUNT = 100;
+{
+  name = "example",
+  values = [
+    1, 2, 3
+  ],
+  max = ^MAX_COUNT
+}
