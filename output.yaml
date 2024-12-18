@@ -1,0 +1,6 @@
+max: 100
+name: example
+values:
+- 1
+- 2
+- 3
