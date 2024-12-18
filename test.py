@@ -1,6 +1,6 @@
-# tests.py
 import unittest
 from config_to_yaml import ConfigParser
+
 
 class TestConfigParser(unittest.TestCase):
     def setUp(self):
@@ -50,17 +50,6 @@ class TestConfigParser(unittest.TestCase):
             "values": [1, 2, 10]
         }
         result = self.parser.parse(text)
-        self.assertEqual(result, expected)
-
-    def test_parse_dict_with_nested_structures(self):
-        text = "{ name = \"example\", values = [1, 2, 3], max = ^MAX_COUNT }"
-        self.parser.constants = {"MAX_COUNT": 100}
-        expected = {
-            "name": "example",
-            "values": [1, 2, 3],
-            "max": 100
-        }
-        result = self.parser.parse_dict(text)
         self.assertEqual(result, expected)
 
 

@@ -23,8 +23,12 @@ class ConfigParser:
             elif line:  # Полезная строка
                 main_structure_lines.append(line)
 
-        # Собираем общую структуру
+        # Если тело с данными осталось пустым, но есть константы, это разрешено
         main_structure = " ".join(main_structure_lines).strip()
+        if not main_structure:  # Проверяем, пустое ли тело после обработки
+            print("Нет структуры для парсинга, только константы определены.")  # Debug
+            return None
+
         print("Структура для парсинга:", main_structure)  # Debug
 
         if main_structure.startswith("{") and main_structure.endswith("}"):
@@ -37,6 +41,8 @@ class ConfigParser:
         text = re.sub(r'%.*', '', text)
         # Удаляем многострочные комментарии (/* */)
         text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+        # Удаляем пустые строки
+        text = "\n".join(line for line in text.splitlines() if line.strip())  # Убираем пустые строки
         return text.strip()
 
     def handle_constant_definition(self, line):
