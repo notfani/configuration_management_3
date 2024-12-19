@@ -1,9 +1,8 @@
-% Это пример конфигурации
-def MAX_COUNT = 100;
+def THRESHOLD = 10;
 {
-  name = "example",
-  values = [
-    1, 2, 3
-  ],
-  max = ^MAX_COUNT,
+    settings = {
+        mode = "auto",
+        threshold = ^(THRESHOLD)
+    },
+    data = [1, 2, 3]
 }

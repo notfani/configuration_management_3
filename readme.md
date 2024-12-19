@@ -78,6 +78,16 @@ values:
 - 3
 ```
 
+```yaml
+settings:
+  mode: auto
+  threshold: 10
+data:
+  - 1
+  - 2
+  - 3
+```
+
 ---
 
 ## Тестирование
